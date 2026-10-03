@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Add my song to the birthday page</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;background:radial-gradient(ellipse at 50% 0,#7a1b4a,#4a0f2e 45%,#2a0a1c);color:#fff3ea;font-family:Georgia,serif;font-size:19px;line-height:1.5;display:flex;justify-content:center;padding:28px 16px}
+.box{width:min(100%,520px)}
+h1{font-weight:400;font-size:2rem;color:#ffc2d4;margin:0 0 6px;text-align:center}
+.sub{text-align:center;color:#ffc2d4;font-style:italic;margin:0 0 22px}
+.step{background:rgba(255,255,255,.08);border:1px solid rgba(255,194,212,.3);border-radius:18px;padding:16px;margin-bottom:14px}
+.step b{color:#f5c76b}
+input[type=file]{width:100%;margin-top:8px;color:#ffc2d4;font-size:.95rem}
+input[type=file]::file-selector-button{font-family:inherit;font-weight:700;color:#2a0a1c;background:linear-gradient(135deg,#f5c76b,#ffdf9a);border:0;border-radius:999px;padding:10px 18px;margin-right:10px;cursor:pointer}
+button,a.dl{display:block;width:100%;text-align:center;text-decoration:none;font-family:inherit;font-weight:700;font-size:1.1rem;color:#2a0a1c;background:linear-gradient(135deg,#f5c76b,#ffdf9a);border:0;border-radius:999px;padding:14px;cursor:pointer}
+button:disabled{opacity:.45;cursor:not-allowed}
+#msg{margin:14px 0;text-align:center;min-height:1.5em}
+a.dl{display:none;margin-top:10px}
+.small{font-size:.85rem;opacity:.8;text-align:center;margin-top:18px}
+</style>
+</head>
+<body>
+<div class="box">
+ <h1>Add my song</h1>
+ <p class="sub">Put your own song inside the birthday page as background music.<br>Everything happens on your phone/computer. Nothing is uploaded.</p>
+ <div class="step"><b>1.</b> Choose the birthday page file <b>index.html</b> (from the unzipped folder)<input type="file" id="pageFile" accept=".html,text/html"></div>
+ <div class="step"><b>2.</b> Choose your background song (mp3)<input type="file" id="songFile" accept="audio/*,.mp3"></div>
+ <button id="go" disabled>3. Make my birthday page</button>
+ <div id="msg" role="status"></div>
+ <a class="dl" id="dl" download="birthday-with-my-song.html">Download the new page</a>
+ <p class="small">After it downloads, open <b>birthday-with-my-song.html</b> in Chrome. Your song plays in the background on every screen except the song screen.</p>
+</div>
+<script>
+(function(){
+ var pageF=document.getElementById('pageFile'),songF=document.getElementById('songFile'),go=document.getElementById('go'),msg=document.getElementById('msg'),dl=document.getElementById('dl');
+ function ready(){go.disabled=!(pageF.files[0]&&songF.files[0])}
+ pageF.addEventListener('change',ready);songF.addEventListener('change',ready);
+ function readText(f){return new Promise(function(res,rej){var r=new FileReader();r.onload=function(){res(r.result)};r.onerror=function(){rej(r.error)};r.readAsText(f)})}
+ function readB64(f){return new Promise(function(res,rej){var r=new FileReader();r.onload=function(){var s=String(r.result);res(s.substring(s.indexOf(',')+1))};r.onerror=function(){rej(r.error)};r.readAsDataURL(f)})}
+ go.addEventListener('click',function(){
+  msg.textContent='Working... please wait a few seconds';go.disabled=true;dl.style.display='none';
+  Promise.all([readText(pageF.files[0]),readB64(songF.files[0])]).then(function(a){
+   var html=a[0],b64=a[1];
+   var re=/(<script type="text\/plain" id="bgmData">)([\s\S]*?)(<\/script>)/;
+   if(!re.test(html)){msg.textContent='This is not the birthday page file. Please choose index.html from the zip.';go.disabled=false;return}
+   var out=html.replace(re,function(m,p1,p2,p3){return p1+b64+p3});
+   var blob=new Blob([out],{type:'text/html'});
+   var url=URL.createObjectURL(blob);
+   dl.href=url;dl.style.display='block';
+   msg.textContent='Done! Tap the button below to download your new page.';
+   try{dl.click()}catch(e){}
+   go.disabled=false;
+  }).catch(function(){msg.textContent='Something went wrong. Please try again in Chrome.';go.disabled=false});
+ });
+})();
+</script>
+</body>
+</html>
